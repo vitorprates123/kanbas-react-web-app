@@ -288,7 +288,7 @@ export default function Lab1() {
             to get dummy text<br/>
 
             Please
-            <a id="wd-github" href="https://github.com/vitorprates123/webdev">click here</a>
+            <a id="wd-github" href="https://github.com/vitorprates123/kanbas-react-web-app">click here</a>
             to go to git<br/>
 
         </div>
