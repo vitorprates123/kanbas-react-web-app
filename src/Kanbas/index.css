@@ -1,0 +1,20 @@
+
+.list-group-item.bg-black.text-danger {
+    background-color: black;
+    color: red;
+}
+
+.list-group-item.bg-black.text-danger .fs-1 {
+    color: red;
+}
+
+
+.list-group-item.active {
+    background-color: white !important;
+    color: red !important;
+}
+
+
+.list-group-item.active .fs-1 {
+    color: red !important;
+}
