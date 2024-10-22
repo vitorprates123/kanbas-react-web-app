@@ -11,7 +11,7 @@
 
 .list-group-item.active {
     background-color: white !important;
-    color: red !important;
+    color: black !important;
 }
 
 
