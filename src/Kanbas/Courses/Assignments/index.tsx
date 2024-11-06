@@ -1,12 +1,24 @@
-import { FaPlus, FaSearch, FaGripVertical, FaEllipsisV, FaTrash } from "react-icons/fa";
-import { BsPlus } from "react-icons/bs";
-import GreenCheckmark from "./GreenCheckmark";
-import { useParams, useNavigate } from "react-router";
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useParams, useNavigate } from "react-router";
 import { RootState } from "../../store";
 import { deleteAssignment } from "./reducer";
-import { useState } from "react";
+import {FaEllipsisV, FaGripVertical, FaSearch, FaTrash} from "react-icons/fa";
+import {FaPlus} from "react-icons/fa6";
+import {BsPlus} from "react-icons/bs";
+import {Link} from "react-router-dom";
+import GreenCheckmark from "./GreenCheckmark";
+
+interface Assignment {
+    _id: string;
+    title: string;
+    description: string;
+    points: number;
+    dueDate: string;
+    notAvailableUntil: string;
+    course: string;
+    modules: string;
+}
 
 export default function Assignments() {
     const { cid } = useParams();
@@ -14,14 +26,14 @@ export default function Assignments() {
     const dispatch = useDispatch();
     const assignments = useSelector((state: RootState) => state.assignmentsReducer.assignments);
     const [showDialog, setShowDialog] = useState(false);
-    const [assignmentToDelete, setAssignmentToDelete] = useState(null);
+    const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null);
 
     const handleAddAssignment = () => {
         const newAssignmentId = "new";
         navigate(`/Kanbas/Courses/${cid}/Assignments/${newAssignmentId}`);
     };
 
-    const handleDeleteClick = (assignment: any) => {
+    const handleDeleteClick = (assignment: Assignment) => {
         setAssignmentToDelete(assignment);
         setShowDialog(true);
     };
@@ -78,8 +90,8 @@ export default function Assignments() {
             {/* Assignment list */}
             <ul id="wd-assignment-list" className="list-group">
                 {assignments
-                    .filter((assignment: any) => assignment.course === cid)
-                    .map((assignment: any) => (
+                    .filter((assignment: Assignment) => assignment.course === cid)
+                    .map((assignment: Assignment) => (
                         <li
                             key={assignment._id}
                             className="wd-assignment-list-item list-group-item p-3 d-flex justify-content-between align-items-center"
