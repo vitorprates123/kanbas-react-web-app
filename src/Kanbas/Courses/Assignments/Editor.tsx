@@ -1,66 +1,65 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
-import { addAssignment, updateAssignment } from "./reducer";
-import { RootState } from "../../store";
-
-interface Assignment {
-    _id: string;
-    title: string;
-    description: string;
-    points: number;
-    dueDate: string;
-    notAvailableUntil: string;
-    course: string;
-    modules: string;
-}
+import React, {useEffect, useState} from "react";
+import {useParams} from "react-router";
+import * as coursesClient from "../client";
+import {addAssignment, setAssignments, updateAssignment} from "./reducer";
+import {useDispatch, useSelector} from "react-redux";
+import {useNavigate} from "react-router-dom";
+import {addModule, updateModule} from "../Modules/reducer";
+import * as assignmentsClient from "./client";
+// import {assignments} from "../../Database";
 
 export default function AssignmentEditor() {
-    const { aid, cid } = useParams();
-    const navigate = useNavigate();
+    const { aid } = useParams();
+    const { assignments } = useSelector((state: any) => state.assignmentsReducer);
     const dispatch = useDispatch();
-    const assignments = useSelector((state: RootState) => state.assignmentsReducer.assignments);
-    const assignment: Assignment = assignments.find((assignment: Assignment) => assignment._id === aid) || {} as Assignment;
+    const navigate = useNavigate();
+    const { cid } = useParams() as { cid: string };
+    const [assignmentTitle, setAssignmentTitle] = useState("");
+    const [assignmentDescription, setAssignmentDescription] = useState("");
+    const [assignmentPoints, setAssignmentPoints] = useState(100);
+    const [assignmentDueDate, setAssignmentDueDate] = useState("");
+    const [assignmentAvailableFrom, setAssignmentAvailableFrom] = useState("2024-05-06");
+    const [assignmentAvailableUntil, setAssignmentAvailableUntil] = useState("2024-05-28");
 
-    const [title, setTitle] = useState(assignment.title || "");
-    const [description, setDescription] = useState(assignment.description || "");
-    const [points, setPoints] = useState(assignment.points || 100);
-    const [dueDate, setDueDate] = useState(assignment.dueDate || "2024-05-13");
-    const [availableFrom, setAvailableFrom] = useState(assignment.notAvailableUntil || "2024-05-06");
-    const [modules, setModules] = useState(assignment.modules || "Multiple Modules");
-
+    const fetchAssignments = async () => {
+        const assignments = await coursesClient.findAssignmentsForCourse(cid as string);
+        dispatch(setAssignments(assignments));
+    };
     useEffect(() => {
-        if (aid !== "new") {
-            setTitle(assignment.title || "");
-            setDescription(assignment.description || "");
-            setPoints(assignment.points || 100);
-            setDueDate(assignment.dueDate || "2024-05-13");
-            setAvailableFrom(assignment.notAvailableUntil || "2024-05-06");
-            setModules(assignment.modules || "Multiple Modules");
+        fetchAssignments();
+        if (assignment) {
+            setAssignmentTitle(assignment.title);
+            setAssignmentDescription(assignment.description);
+            setAssignmentPoints(assignment.points);
+            setAssignmentDueDate(assignment.dueDate);
+            setAssignmentAvailableFrom(assignment.availableFrom);
+            setAssignmentAvailableUntil(assignment.availableUntil);
         }
-    }, [aid, assignment]);
+    }, []);
+    const assignment = assignments.find((assignment: any) => assignment._id === aid);
 
-    const handleSave = () => {
-        const newAssignment = {
-            _id: aid === "new" ? title.replace(/\s+/g, '-').toLowerCase() : assignment._id,
-            title,
-            description,
-            dueDate,
-            points,
-            course: cid,
-            notAvailableUntil: availableFrom,
-            modules,
-        };
-        if (aid === "new") {
-            dispatch(addAssignment(newAssignment));
-        } else {
-            dispatch(updateAssignment(newAssignment));
-        }
-        navigate(`/Kanbas/Courses/${cid}/Assignments`);
+    const createAssignmentForCourse = async () => {
+        if (!aid) return;
+        const newAssignment = { _id: "new", title: assignmentTitle, course: cid,
+            availableFrom: assignmentAvailableFrom, availableUntil: assignmentAvailableUntil,
+        dueDate: assignmentDueDate, points: assignmentPoints, description: assignmentDescription};
+        const assignment = await coursesClient.createAssignmentForCourse(cid, newAssignment);
+        dispatch(addAssignment(assignment));
     };
 
-    const handleCancel = () => {
-        navigate(`/Kanbas/Courses/${cid}/Assignments`);
+    const saveAssignment = async () => {
+        if (!assignment) return;
+        const updatedAssignment = {
+            ...assignment,
+            title: assignmentTitle,
+            description: assignmentDescription,
+            points: assignmentPoints,
+            dueDate: assignmentDueDate,
+            availableFrom: assignmentAvailableFrom,
+            availableUntil: assignmentAvailableUntil,
+        };
+        await assignmentsClient.updateAssignment(updatedAssignment);
+        dispatch(updateAssignment(updatedAssignment));
     };
 
     return (
@@ -68,9 +67,10 @@ export default function AssignmentEditor() {
             <h4 className="mb-4">Assignment Name</h4>
             <input
                 id="wd-name"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={assignmentTitle}
+                onChange={(e) => setAssignmentTitle(e.target.value)}
                 className="form-control mb-3"
+
             />
 
             <div className="mb-4">
@@ -81,8 +81,8 @@ export default function AssignmentEditor() {
                     id="wd-description"
                     className="form-control"
                     rows={5}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    value={assignment ? assignment.description : assignmentDescription}
+                    onChange={(e) => setAssignmentDescription(e.target.value)}
                 />
             </div>
 
@@ -95,65 +95,45 @@ export default function AssignmentEditor() {
                         <input
                             id="wd-points"
                             type="number"
-                            value={points}
-                            onChange={(e) => setPoints(Number(e.target.value))}
-                            className="form-control"
-                        />
-                    </div>
-                </div>
-                <div className="col-md-6">
-                    <div className="mb-3">
-                        <label htmlFor="wd-due-date" className="form-label">
-                            Due Date
-                        </label>
-                        <input
-                            id="wd-due-date"
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
+                            value={assignment ? assignment.points : assignmentPoints}
+                            onChange={(e) => setAssignmentPoints(Number(e.target.value))}
                             className="form-control"
                         />
                     </div>
                 </div>
             </div>
 
-            <div className="row">
-                <div className="col-md-6">
-                    <div className="mb-3">
-                        <label htmlFor="wd-available-from" className="form-label">
-                            Available From
-                        </label>
-                        <input
-                            id="wd-available-from"
-                            type="date"
-                            value={availableFrom}
-                            onChange={(e) => setAvailableFrom(e.target.value)}
-                            className="form-control"
-                        />
-                    </div>
+            <div className="row mt-4">
+                <div className="col-md-4 mb-3">
+                    <h6 className="font-weight-bold">Due</h6>
+                    <input type="date" id="wd-due-date" className="form-control" value={assignment ? assignment.dueDate : assignmentDueDate}
+                           onChange={(e) => setAssignmentDueDate(e.target.value)} />
                 </div>
-                <div className="col-md-6">
-                    <div className="mb-3">
-                        <label htmlFor="wd-modules" className="form-label">
-                            Modules
-                        </label>
-                        <input
-                            id="wd-modules"
-                            type="text"
-                            value={modules}
-                            onChange={(e) => setModules(e.target.value)}
-                            className="form-control"
-                        />
-                    </div>
+                <div className="col-md-4 mb-3">
+                    <h6 className="font-weight-bold">Available from</h6>
+                    <input type="date" id="wd-available-from" className="form-control" value={assignment ? assignment.availableFrom : assignmentAvailableFrom}
+                           onChange={(e) => setAssignmentAvailableFrom(e.target.value)} />
+                </div>
+                <div className="col-md-4 mb-3">
+                    <h6 className="font-weight-bold">Until</h6>
+                    <input type="date" id="wd-available-until" className="form-control" value={assignment ? assignment.availableUntil : assignmentAvailableUntil}
+                           onChange={(e) => setAssignmentAvailableUntil(e.target.value)} />
                 </div>
             </div>
 
             <div className="d-flex justify-content-end mt-3">
-                <button id="wd-cancel" className="btn btn-secondary me-2" onClick={handleCancel}>
-                    Cancel
+                <button id="wd-cancel" className="btn btn-secondary me-2"
+                        onClick={() => navigate(`/Kanbas/Courses/${cid}/Assignments`)}>Cancel
                 </button>
-                <button id="wd-save" className="btn btn-danger" onClick={handleSave}>
-                    Save
+                <button id="wd-save" className="btn btn-danger"
+                        onClick={async () => {
+                            if (aid !== "new") {
+                                await saveAssignment();
+                            } else {
+                                await createAssignmentForCourse();
+                            }
+                            navigate(`/Kanbas/Courses/${cid}/Assignments`);
+                        }}>Save
                 </button>
             </div>
         </div>
