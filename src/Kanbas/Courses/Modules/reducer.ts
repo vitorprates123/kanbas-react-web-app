@@ -1,6 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 // import { modules } from "../../Database";
-const initialState = {
+interface Module {
+    _id: string;
+    editing?: boolean;
+    // Add other properties of Module here
+}
+
+const initialState: { modules: Module[] } = {
     modules: [],
 };
 const modulesSlice = createSlice({
@@ -11,14 +17,9 @@ const modulesSlice = createSlice({
             state.modules = action.payload;
         },
         addModule: (state, { payload: module }) => {
-            const newModule: any = {
-                _id: new Date().getTime().toString(),
-                lessons: [],
-                name: module.name,
-                course: module.course,
-            };
-            state.modules = [...state.modules, newModule] as any;
-        },
+            // Add the module returned from the backend
+            state.modules = [...state.modules, module];
+          },
         deleteModule: (state, { payload: moduleId }) => {
             state.modules = state.modules.filter(
                 (m: any) => m._id !== moduleId);
